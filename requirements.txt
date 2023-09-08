@@ -1,0 +1,13 @@
+# Standard libraries
+# (json, os, random, math, and collections are part of Python's standard library and don't need to be listed)
+
+# Third-party libraries
+torch
+torchvision
+numpy
+PIL
+scikit-image
+pycocotools
+torch-geometric
+networkx
+scipy
