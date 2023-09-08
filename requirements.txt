@@ -5,7 +5,7 @@
 torch
 torchvision
 numpy
-PIL
+Pillow
 scikit-image
 pycocotools
 torch-geometric
