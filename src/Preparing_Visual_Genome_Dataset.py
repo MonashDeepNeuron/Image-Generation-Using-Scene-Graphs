@@ -1,8 +1,19 @@
-# Preparing Visual Genome Dataset (idk what we doing but we ball)
+# Visual Genome Dataset Preparation
+# STEPS WE NEED TO FOLLOW:
+# Extract all objects of an image
+# Class ID, X and Y position of the objects in scale [0,1]
+# Use X and Y position to calculate the relationships
+# using kurskal algorthim, construct edges between objects (left of, right of)
+# Connecting the nodes of relationships 
+#  then connecting to supernodes
 
-# Bringing in modules:
+
+# Bringing in modules/dependencies/etc:
 import os
 import random
+import math
+import json
+
 from collections import defaultdict
 
 import torch
@@ -10,33 +21,98 @@ from torch.utils.data import Dataset
 import torchvision.transforms as T
 
 import numpy as np
-#import h5py 
-# not sure what this module does and if we need it ^^
-import PIL 
-from PIL import Image
+import h5py
+import PIL
 
-#from .utils import imagenet_preprocess, Resize
+import torch_geometric
+from torch_geometric.data import Dataset, download_url
+import networkx as nx
+from networkx.algorithms import tree
+
+from .utils import imagenet_preprocess, Resize
 
 
-## Figure out how to open json files 
 
-# Firstly, trying to make a class to store all the variables that we need 
 class VisualGenomeDataset(Dataset):
-  # class attributes:
-  # (Placeholder)
+  """ 
+  A PyTorch Dataset for loading Visual Genome dataset image and converting
+  getting information from them.
+  
 
+  Inputs:
+  - image_dir: Path to a directory where images are held (str-path)
+  - instances_json: Path to a JSON file giving COCO annotations (str-path)
+  - image_size: Size (H, W) at which to load images. 
+  - mask_size: Size M for object segmentation masks; default 16. (int)
+  """
 
-  # Constructor
-  def __init__(self, image_id, object_name, object_id, x0, y0, x1, y1, image_size): 
-    # Defining the variables
+  def __init__(self, image_id, image_dir, object_name, object_id, image_size=(256, 256)):
+    super(VisualGenomeDataset, self).__init__()
+
+    self.image_dir = image_dir
+    self.image_size = image_size
     self.image_id = image_id
     self.object_name = object_name
-    self.object_id = object_id
-    self.border_info = border_info
-    self.image_size = image_size
     
-    self.transform = T.Compose([T.Resize(image_size), T.ToTensor()])
 
+  #Open file 
+    with open(image_data, 'r') as f: # r => the file will be opened in read mode but not for modifying.
+      image_data = json.load(f)
+    
+
+    with open(object_json, 'r') as f: # r => the file will be opened in read mode but not for modifying.
+      object_data = json.load(f)
+
+
+     # Storage
+    self.img_id_store = []
+    self.img_id_to_url = {}
+    self.obj_id_to_size = {}
+    
+
+
+    for item in object_data['images']:
+      object_id =  object_data['image_id']
+      file_url= image_data['url']
+      width = object_data['w']
+      height = object_data['h']
+      self.img_id_store.append(object_id)
+      self.img_id_to_url[object_id] = file_url
+      self.obj_id_to_size[object_id] = (width, height)
+
+    # dictionary storing index and name/categories of the image
+    self.dict_vocab = {
+       'object_name_to_idx': {},
+       'pred_name_to_idx': {},
+  
+    }
+
+    obj_idx_to_name ={}
+    # extract the categories/names of the object from object_data
+    all_object_categories= []
+    for category_data in object_data:
+       category_id = category_data['object_id']
+       category_name =  category_data['names']
+       all_object_categories.append[category_name]
+       obj_idx_to_name[category_id] = category_name
+       self.dict_vocab['object_name_to_idx'][category_name] = category_id
+
+    '''
+   
+    all_stuff_categories = []
+      if stuff_data:
+        for category_data in stuff_data['categories']:
+          category_name = category_data['name']
+          category_id = category_data['id']
+          all_stuff_categories.append(category_name)
+          obj_idx_to_name[category_id] = category_name
+          self.vocab['object_name_to_idx'][category_name] = category_id
+     '''
+       
+       
+
+
+    self.transform = T.Compose([T.Resize(image_size), T.ToTensor()])
     border_info ={y0_bottom_left:0, y1_top_left:0, x0_bottom_left:0, y1_top_right:0, x_width:0 , y_height:0}
     
     # pass all info into dictionary border_info
@@ -61,6 +137,8 @@ class VisualGenomeDataset(Dataset):
     resize = (0.5,0.5) # Between 0 and 1 (worry about later)
     org_size = [bt_left_x0y0, tp_right_x1y1]
     org_size[0] = x0_bottom_left
+
+ 
 
 
 
@@ -91,6 +169,8 @@ class VisualGenomeDataset(Dataset):
             'object_info': object_info,
             'image_size': (width, height)
         }
+  
+
 
 # Main Function:
 
@@ -101,7 +181,6 @@ if __name__ == "__main__":
     object_info = [...]  # List of dictionaries containing object info
 
     image_size = (256, 256)  # Example image size
-
     dataset = VisualGenomeDataset(image_directory, image_paths, object_info, image_size)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=32, shuffle=True)
 
