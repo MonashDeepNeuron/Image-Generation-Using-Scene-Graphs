@@ -99,7 +99,7 @@ class SceneGraphConstructor:
             node_centres.append([mean_x, mean_y])
         node_centres = torch.FloatTensor(node_centres)
 
-        # Removing supernode from node_centres and nodes so that it is not considered in MST algorithm
+        # Removing supernode from node_centres and nodes so that it is not considered in delauney algorithm
         node_centres = node_centres[:-1]
         nodes = nodes[:-1]
         num_nodes = len(nodes)
@@ -124,28 +124,29 @@ class SceneGraphConstructor:
         all other nodes to adjacency_list. Supernode coordinates are always (0,0,1,1), where 0,0 represents the bottom left of the image and 1,1 represents
         the top right of the image. 
         '''
-        # Adding the supernode centre to node_centres
-        node_centres = torch.cat(
-            (node_centres, torch.tensor([[0.5, 0.5]])), dim=0)
+        # # Adding the supernode centre to node_centres
+        # node_centres = torch.cat(
+        #     (node_centres, torch.tensor([[0.5, 0.5]])), dim=0)
 
-        # supernode_ID denotes the unique ID for the supernode
-        supernode_ID = len(nodes)
-        # supernode_ID = len(nodes) -1
-        in_image_classID = self.vocab['pred_name_to_idx']['__in_image__']
+        # # supernode_ID denotes the unique ID for the supernode
+        # supernode_ID = len(nodes)
+        # # supernode_ID = len(nodes) -1
+        # in_image_classID = self.vocab['pred_name_to_idx']['__in_image__']
 
-        # Define the feature vector for the supernode
-        supernode_feature_vector = [in_image_classID, 0.5, 0.5]
-        feature_vectors = torch.cat(
-            (feature_vectors, torch.tensor([supernode_feature_vector])), dim=0)
+        # # Define the feature vector for the supernode
+        # supernode_feature_vector = [in_image_classID, 0.5, 0.5]
+        # feature_vectors = torch.cat(
+        #     (feature_vectors, torch.tensor([supernode_feature_vector])), dim=0)
 
-        # Create edges between the supernode and every object node (excluding predicate nodes)
-        for i in range(num_nodes):
-            adjacency_list.append([supernode_ID, i])
+        # # Create edges between the supernode and every object node (excluding predicate nodes)
+        # for i in range(num_nodes):
+        #     adjacency_list.append([supernode_ID, i])
 
         '''
         Adding Predicate Nodes: For each edge, make it a node with a nodeID. 
         '''
-        nodeID = supernode_ID+1  # Starting node ID to give to predicate nodes
+        #nodeID = supernode_ID+1  # Starting node ID to give to predicate nodes
+        nodeID = len(nodes)  
         def midpoint(p1, p2): return ((p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2)
         temporary = []
         # Predicate has the form [subjectID, objectID, euclideanDistance]
@@ -220,7 +221,7 @@ class SceneGraphConstructor:
         if math.pi / 4 <= theta < RIGHT_BOUND:
             return 'BELOW'
 
-    def extract_edges_from_delaunay(points):
+    def extract_edges_from_delaunay(self, points):
         """
     Extract the unique edges from the Delaunay triangulation of a set of 2D points.
 
@@ -241,7 +242,7 @@ class SceneGraphConstructor:
         simplices = Delaunay(points)
         edges = set()
 
-        for simplex in tri.simplices:
+        for simplex in simplices.simplices:
             # For 2D triangulation, a simplex is a triangle
             # So, we extract 3 edges from each simplex
             for i in range(3):

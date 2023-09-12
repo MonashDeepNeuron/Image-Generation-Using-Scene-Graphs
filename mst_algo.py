@@ -5,6 +5,7 @@ import torch
 from enum import Enum
 from torch_geometric.data import Data
 
+
 '''
 Current COCO-Stuff Data Loading Progress:
 nodes: node_list[x] returns the class ID of node x

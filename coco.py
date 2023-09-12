@@ -17,6 +17,7 @@ import networkx as nx
 from networkx.algorithms import tree
 
 import mst_algo
+import delaunay
 
 class Resize(object):
   def __init__(self, size, interp=PIL.Image.BILINEAR):
@@ -228,7 +229,7 @@ class CocoPyGDataset(Dataset):
 
     @property
     def raw_file_names(self):
-        return ['data/COCO_Stuff/validation/val2017/000000002473.jpg']
+        return ['data/COCO_Stuff/validation/val2017/000000002592.jpg']
 
     @property
     def processed_file_names(self):
@@ -242,21 +243,11 @@ class CocoPyGDataset(Dataset):
     def process(self):
         index = 0
         for raw_path in self.raw_paths:
-            # Read data from `raw_path`.
-            # data = Data(...)
-
-            # if self.pre_filter is not None and not self.pre_filter(data):
-            #     continue
-
-            # if self.pre_transform is not None:
-            #     data = self.pre_transform(data)
-
-            # torch.save(data, osp.join(self.processed_dir, f'data_{idx}.pt'))
-            # idx += 1
 
             image_id = self.image_ids[index]
         
             filename = self.image_id_to_filename[image_id]
+            print(filename)
             image_path = os.path.join(self.image_dir, filename)
 
             with open(image_path, 'rb') as f:
@@ -303,7 +294,7 @@ class CocoPyGDataset(Dataset):
             boxes = torch.stack(boxes, dim=0)
             masks = torch.stack(masks, dim=0)
 
-            self.sceneGraphConstructor = mst_algo.SceneGraphConstructor(vocab=self.vocab, boxes=boxes)
+            self.sceneGraphConstructor = delaunay.SceneGraphConstructor(vocab=self.vocab, boxes=boxes)
             scene_graph = self.sceneGraphConstructor.construct_scene_graph(objs, boxes, masks)
             g = torch_geometric.utils.to_networkx(scene_graph, to_undirected=False)
             nx.draw(g)
