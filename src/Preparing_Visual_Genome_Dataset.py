@@ -45,8 +45,9 @@ class VisualGenomeDataset(Dataset):
   - object_dir
   """
 
-  def __init__(self, image_id, image_dir, image_data,object_dir,object_name, object_id, image_size=(256, 256),min_object_size=0.02):
-    super(VisualGenomeDataset, self).__init__() 
+  def __init__(self, image_id, image_dir, image_data,object_dir,object_name, object_id, image_size=(256, 256),min_object_size=0.02,
+               min_objects_per_image=3, max_objects_per_image=8,include_other=False, instance_whitelist=None, stuff_whitelist=None, transform=None, pre_transform=None, pre_filter=None):
+    # super(VisualGenomeDataset, self).__init__() 
 
     # Listing 
     self.image_dir = image_dir
@@ -95,7 +96,7 @@ class VisualGenomeDataset(Dataset):
     }
 
     object_idx_to_name = {} ### maps every index value to an object name ###
-    all_instance_categories = [] ### List of all class names in dataset ###
+    all_categories = [] ### List of all class names in dataset ###
     obj_id_to_img_id = {} ### maps every object ID to its image ID
 
     obj_idx_to_name ={}
@@ -113,7 +114,7 @@ class VisualGenomeDataset(Dataset):
        object_id = object_data[index]['object_id'] 
 
        # Retrieving the 'Category Name' of the object (e.g. 'Apple', 'Car')
-       category_id = object_data[index]['synsets'][0]
+       category_id = object_data[index]['name']
        
        #object_data[index]['synsets'][0]
 
@@ -127,8 +128,8 @@ class VisualGenomeDataset(Dataset):
       #  self.dict_vocab['object_name_to_idx'][category_name] = category_id
        
        # Building the all_instance_categories list which holds every category this dataset contains (e.g. 'Apple', 'Car')
-       if category_id not in all_instance_categories:
-          all_instance_categories.append(category_id)
+       if category_id not in all_categories:
+          all_instance_categories.append(all_categories)
           
 
     # Add object data from instances
@@ -151,14 +152,131 @@ class VisualGenomeDataset(Dataset):
      # width and height of the image
       width,height = self.img_id_to_size[image_id]
       box_area = (w * h) / (width * height) ### used to calculate min box_area
+      
+      
+      #x0, y0: bottom left
+      #x1, y1: top right
+
+      height,width = self.image_size
+      
+
+
+
+      
+
+      H, W = self.image_size
+      objs, boxes, masks = [], [], []
+      for object_data in self.img_id_to_objects[image_id]:
+        #  objs.append(object_data['category_id'])
+        #  x, y, w, h = object_data['bbox']
+          x0 = x / WW
+          y0 = y / HH
+          x1 = (x + w) / WW
+          y1 = (y + h) / HH
+          boxes.append(torch.FloatTensor([x0, y0, x1, y1]))
+
+          # This will give a numpy array of shape (HH, WW)
+          mask = self.seg_to_mask(object_data['segmentation'], WW, HH)
+
+          # Crop the mask according to the bounding box, being careful to
+          # ensure that we don't crop a zero-area region
+          mx0, mx1 = int(round(x)), int(round(x + w))
+          my0, my1 = int(round(y)), int(round(y + h))
+          mx1 = max(mx0 + 1, mx1)
+          my1 = max(my0 + 1, my1)
+          mask = mask[my0:my1, mx0:mx1]
+          mask = imresize(255.0 * mask, (self.mask_size, self.mask_size),
+                          mode='constant')
+          mask = torch.from_numpy((mask > 128).astype(np.int64))
+          masks.append(mask)
+      
+      
+      
+      
+      
       box_ok = box_area > min_object_size
-      object_name = object_idx_to_name[object_data[index]['synsets'][0]] ### Again using dictionaries helpful for referencing
-      category_ok = object_name in category_whitelist 
+      object_name = object_idx_to_name[object_data[index]['name']] ### Again using dictionaries helpful for referencing
+      category_ok = object_name in all_category
       other_ok = object_name != 'other' or include_other ### Don't include object if its annotated as "other"
       if box_ok and category_ok and other_ok:
         self.image_id_to_objects[image_id].append(object_data[index]) ### We can use this object ###
+      
+      
+      # COCO category labels start at 1, so use 0 for __image__
+        self.vocab['object_name_to_idx']['__image__'] = 0 ### supernode ###
+        
+      # Build object_idx_to_name
+        name_to_idx = self.vocab['object_name_to_idx'] 
+        assert len(name_to_idx) == len(set(name_to_idx.values())) ### Assert that the number of classes you have seen is the same as the number of indexes/classes
+        max_object_idx = max(name_to_idx.values()) 
+        idx_to_name = ['NONE'] * (1 + max_object_idx) ### preallocate dictionary with entries for each class (+1 for supernode)
+        for name, idx in self.vocab['object_name_to_idx'].items(): ### Fill out dictionary with 'NONE' class names, which will be replaced with actual class name
+            idx_to_name[idx] = name
+        self.vocab['object_idx_to_name'] = idx_to_name
 
+        # Prune images that have too few or too many objects
+        new_image_ids = []
+        total_objs = 0
+        for image_id in self.image_ids:
+            num_objs = len(self.image_id_to_objects[image_id])
+            total_objs += num_objs
+            if min_objects_per_image <= num_objs <= max_objects_per_image:
+                new_image_ids.append(image_id)
+        self.image_ids = new_image_ids
+        
+        self.vocab['pred_idx_to_name'] = [
+            '__in_image__', ## for da supernode
+            'left of',
+            'right of',
+            'above',
+            'below',
+            'inside',
+            'surrounding',
+        ]
+        self.vocab['pred_name_to_idx'] = {}
+        for idx, name in enumerate(self.vocab['pred_idx_to_name']):
+            self.vocab['pred_name_to_idx'][name] = idx
+            
+        super().__init__(image_dir, transform, pre_transform, pre_filter)
+        
+        # Testing
+        @property
+        def raw_file_names(self):
+            # I dont seem to have any validation dataset, need to ask Nyan
+            # return ['data/COCO_Stuff/validation/val2017/000000002592.jpg']
 
+        @property
+        def processed_file_names(self):
+            # return ['data_1.pt']
+        
+        
+        
+        '''
+         def process(self):
+        index = 0
+        for raw_path in self.raw_paths:
+
+            image_id = self.image_ids[index]
+        
+            filename = self.image_id_to_filename[image_id]
+            print(filename)
+            image_path = os.path.join(self.image_dir, filename)
+
+            with open(image_path, 'rb') as f:
+                with PIL.Image.open(f) as image:
+                    WW, HH = image.size
+                    try:
+                        image = self.transform(image.convert('RGB'))
+                    except:
+                        print("No transform specified")
+      
+        '''
+       
+            
+      
+      
+
+        
 
 
 
