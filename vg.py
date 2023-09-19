@@ -5,7 +5,7 @@ import math
 import json
 
 from collections import defaultdict
-
+from pathlib import Path
 import torch
 from torch.utils.data import Dataset
 import torchvision.transforms as T
@@ -92,7 +92,7 @@ class VisualGenomeDataset(Dataset):
 
         # Get image metadata for each image
         if image_data is not None:
-            for item in image_data:
+            for item in image_data[0:10]: # CHANGE THIS BACK TO ALL ITEMS PLS DO NOT FORGET
                 image_id =  item['image_id']
                 file_url= item['url']
                 width = item['width']
@@ -103,42 +103,66 @@ class VisualGenomeDataset(Dataset):
 
         # Get scene graph data for each iamge
         if scene_graph_data is not None:
-            #relationship_idx = 1
-            #object_idx = 1
             node_idx = 1 # this one does not align with the other two prior dictionaries
             colour_idx = 1
-            for item in scene_graph_data:
+            for item in scene_graph_data[0:10]: # CHANGE THIS BACK TO ALL ITEMS PLS DO NOT FORGET
+                self.scene_graph_array.append(item)
                 relationships = item['relationships']
                 for rel in relationships:
-                    rel_name = rel['synsets'][0]
-                    print(rel_name)
-                    print(self.all_relationship_categories['rel_name_to_rel_idx'])
-                    print(self.all_relationship_categories['rel_name_to_rel_idx'].type())
-                    if rel_name not in self.all_relationship_categories['rel_name_to_rel_idx']:
+                    try:
+                        rel_name = rel['synsets'][0]
+                    except:
+                        continue
+                    if not self.all_relationship_categories['rel_name_to_rel_idx']:
                         # Key doesn't exist, so add it with the associated value
-                        self.all_relationship_categories['rel_name_to_rel_idx'] = node_idx #relationship_idx
-                        self.all_relationship_categories['rel_idx_to_rel_name'] = rel_name
-                        self.all_node_categories['node_name_to_node_idx'] = node_idx
-                        self.all_node_categories['node_idx_to_node_name'] = rel_name
-                        #relationship_idx += 1
+                        self.all_relationship_categories['rel_name_to_rel_idx'].update({rel_name: node_idx}) #relationship_idx
+                        self.all_relationship_categories['rel_idx_to_rel_name'].update({node_idx: rel_name})
+                        self.all_node_categories['node_name_to_node_idx'].update({rel_name: node_idx})
+                        self.all_node_categories['node_idx_to_node_name'].update({node_idx: rel_name})
+                        node_idx += 1
+                        continue
+                    if rel_name not in self.all_relationship_categories['rel_idx_to_rel_name']:
+                        # Key doesn't exist, so add it with the associated value
+                        self.all_relationship_categories['rel_name_to_rel_idx'].update({rel_name: node_idx}) #relationship_idx
+                        self.all_relationship_categories['rel_idx_to_rel_name'].update({node_idx: rel_name})
+                        self.all_node_categories['node_name_to_node_idx'].update({rel_name: node_idx})
+                        self.all_node_categories['node_idx_to_node_name'].update({node_idx: rel_name})
                         node_idx += 1
                 objects = item['objects']
                 for obj in objects:
-                    obj_name = obj['synsets'][0]
+                    try:
+                        obj_name = obj['synsets'][0]
+                    except:
+                        continue
+                    if not self.all_object_categories['class_name_to_class_idx']:
+                        # Key doesn't exist, so add it with the associated value
+                        self.all_object_categories['class_name_to_class_idx'].update({obj_name: node_idx})
+                        self.all_object_categories['class_idx_to_class_name'].update({node_idx: obj_name})
+                        self.all_node_categories['node_name_to_node_idx'].update({obj_name: node_idx})
+                        self.all_node_categories['node_idx_to_node_name'].update({node_idx: obj_name})
+                        node_idx += 1
+                        continue
                     if obj_name not in self.all_object_categories['class_name_to_class_idx']:
                         # Key doesn't exist, so add it with the associated value
-                        self.all_object_categories['class_name_to_class_idx'] = node_idx
-                        self.all_object_categories['class_idx_to_class_name'] = obj_name
-                        self.all_node_categories['node_name_to_node_idx'] = node_idx
-                        self.all_node_categories['node_idx_to_node_name'] = obj_name
-                        #object_idx += 1
+                        self.all_object_categories['class_name_to_class_idx'].update({obj_name: node_idx})
+                        self.all_object_categories['class_idx_to_class_name'].update({node_idx: obj_name})
+                        self.all_node_categories['node_name_to_node_idx'].update({obj_name: node_idx})
+                        self.all_node_categories['node_idx_to_node_name'].update({node_idx: obj_name})
                         node_idx += 1
-                    obj_attributes = obj['attributes']
+                    try:
+                        obj_attributes = obj['attributes']
+                    except:
+                        continue
                     if obj_attributes is not None:
                         for attribute in obj_attributes:
+                            if attribute in self.colour_whitelist and not self.all_colours['colour_name_to_colour_idx']:
+                                self.all_colours['colour_name_to_colour_idx'].update({attribute: colour_idx})
+                                self.all_colours['colour_idx_to_colour_name'].update({colour_idx: attribute})
+                                colour_idx += 1
+                                continue
                             if attribute in self.colour_whitelist and attribute not in self.all_colours['colour_name_to_colour_idx']:
-                                self.all_colours['colour_name_to_colour_idx'] = colour_idx
-                                self.all_colours['colour_idx_to_colour_name'] = attribute
+                                self.all_colours['colour_name_to_colour_idx'].update({attribute: colour_idx})
+                                self.all_colours['colour_idx_to_colour_name'].update({colour_idx: attribute})
                                 colour_idx += 1
 
         self.constructor = SceneGraphConstructor()
@@ -152,8 +176,14 @@ class VisualGenomeDataset(Dataset):
         return None # path to prcoessed graphs
 
     def process(self) -> None:
-        for graph in self.scene_graph_array:
-            graph_data_object = self.constructor.construct_scene_graphs(scene_graph=graph, category_dict=self.all_node_categories['node_name_to_node_idx'], all_colour_categories=self.all_colours['colour_name_to_colour_idx'])
+        Path("scene_graphs").mkdir(parents=True, exist_ok=True)
+        for graph in self.scene_graph_array[0]:
+            graph_data_object = self.constructor.construct_scene_graphs(scene_graph=graph, category_dict=self.all_node_categories['node_name_to_node_idx'], colour_dict=self.all_colours['colour_name_to_colour_idx'])
+            # SAVE EACH SCENE GRAPH USING ITS IMAGE ID
+
+
+            # Save the file in the directory
+            #torch.save(graph_data_object, "scene_graphs/please_god.pt")
             torch.save(graph_data_object, "please_god.pt")
             break
 
@@ -161,6 +191,7 @@ class VisualGenomeDataset(Dataset):
         return len(self.scene_graph_array)
 
     def get(self, idx):
+        # Retrieve the file name using the index
         data = torch.load("please_god.pt")
         return data
     
@@ -170,9 +201,6 @@ if __name__ == "__main__":
     image_data_json = "image_data.json"
 
     dset = VisualGenomeDataset(scene_graph_json=scene_graph_json, image_data_json=image_data_json, transform=None, pre_transform=None, pre_filter=None)
-    
-
-## IF WE HAVE DOWNLOADED IMAGES, WHY URL???
-
+    dset.process()
 
 

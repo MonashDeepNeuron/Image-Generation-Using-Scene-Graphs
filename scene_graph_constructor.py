@@ -8,7 +8,7 @@ import torch
 from enum import Enum
 from torch_geometric.data import Data
 from typing import List, Dict
-
+# from GraphOperations import edges_to_adjacency_matrix
 class SceneGraphConstructor:
     '''
     SceneGraphConstructor instances implement the construct_scene_graphs method which which returns a PyTorch
