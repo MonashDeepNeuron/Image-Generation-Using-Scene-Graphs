@@ -12,8 +12,8 @@ import networkx as nx
 import matplotlib.pyplot as plt  # Note the change here
 
 g = torch.load('please_god.pt')
-labeldict = {}
-i = 0
+labeldict = {} # what we want our feature vector to actually look like
+i = 0 #  i = the node ID
 for node in g.x:
     labeldict[i] = node[0]
     i += 1

@@ -112,11 +112,12 @@ class SceneGraphConstructor:
         # Assigning this list edge as the adjacency_list parameter of a PT geometric
         adjacency_list = edges
 
-        # Constructing node feature vectors: each entry is [class ID, node centre]
-        feature_vectors = []
+        # Constructing node feature vectors: each entry is [class ID, node centre] # NEEDS BBOX amogus
+        feature_vectors = [[]*len(nodes)]
         for i in range(num_nodes):
             new_feature_vector = [nodes[i], *node_centres[i]]
-            feature_vectors.append(new_feature_vector)
+            feature_vectors[i] = (new_feature_vector)
+
         feature_vectors = torch.tensor(feature_vectors)
 
         '''
@@ -124,34 +125,33 @@ class SceneGraphConstructor:
         all other nodes to adjacency_list. Supernode coordinates are always (0,0,1,1), where 0,0 represents the bottom left of the image and 1,1 represents
         the top right of the image. 
         '''
-        # # Adding the supernode centre to node_centres
-        # node_centres = torch.cat(
-        #     (node_centres, torch.tensor([[0.5, 0.5]])), dim=0)
+        # Adding the supernode centre to node_centres
+        node_centres = torch.cat(
+            (node_centres, torch.tensor([[0.5, 0.5]])), dim=0)
 
-        # # supernode_ID denotes the unique ID for the supernode
-        # supernode_ID = len(nodes)
-        # # supernode_ID = len(nodes) -1
-        # in_image_classID = self.vocab['pred_name_to_idx']['__in_image__']
+        # supernode_ID denotes the unique ID for the supernode
+        supernode_ID = len(nodes)
+        # supernode_ID = len(nodes) -1
+        in_image_classID = self.vocab['pred_name_to_idx']['__in_image__']
 
-        # # Define the feature vector for the supernode
-        # supernode_feature_vector = [in_image_classID, 0.5, 0.5]
-        # feature_vectors = torch.cat(
-        #     (feature_vectors, torch.tensor([supernode_feature_vector])), dim=0)
+        # Define the feature vector for the supernode
+        supernode_feature_vector = [in_image_classID, 0.5, 0.5]
+        feature_vectors = torch.cat(
+            (feature_vectors, torch.tensor([supernode_feature_vector])), dim=0)
 
-        # # Create edges between the supernode and every object node (excluding predicate nodes)
-        # for i in range(num_nodes):
-        #     adjacency_list.append([supernode_ID, i])
+        # Create edges between the supernode and every object node (excluding predicate nodes)
+        for i in range(num_nodes):
+            adjacency_list.append([supernode_ID, i])
 
         '''
         Adding Predicate Nodes: For each edge, make it a node with a nodeID. 
         '''
-        #nodeID = supernode_ID+1  # Starting node ID to give to predicate nodes
-        nodeID = len(nodes)  
+        # nodeID = supernode_ID+1  # Starting node ID to give to predicate nodes
+        nodeID = len(nodes)
         def midpoint(p1, p2): return ((p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2)
         temporary = []
         # Predicate has the form [subjectID, objectID, euclideanDistance]
         for predicate in adjacency_list:
-            print(f"PLEASE OGDOD {predicate}")
             subjectID = predicate[0]
             objectID = predicate[1]
 

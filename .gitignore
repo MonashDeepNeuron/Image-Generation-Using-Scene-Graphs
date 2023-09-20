@@ -161,3 +161,7 @@ cython_debug/
 
 ### Custom ignores ###
 data/
+
+.DS_Store
+.vscode
+*.json
