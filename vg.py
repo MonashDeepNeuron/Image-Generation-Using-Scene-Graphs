@@ -117,10 +117,7 @@ class VisualGenomeDataset(Dataset):
 
         # Get image metadata for each image
         if image_data is not None:
-            for item in image_data[
-                0:10
-            ]:  # CHANGE THIS BACK TO ALL ITEMS PLS DO NOT FORGET
-                print(item)
+            for item in image_data:  # CHANGE THIS BACK TO ALL ITEMS PLS DO NOT FORGET
                 image_id = item["id"]
                 file_url = item["url"]
                 width = item["width"]
@@ -131,94 +128,101 @@ class VisualGenomeDataset(Dataset):
 
         # Get scene graph data for each iamge
         if scene_graph_data is not None:
-            node_idx = (
-                1  # this one does not align with the other two prior dictionaries
-            )
+            node_idx = 1
             colour_idx = 1
-            for (
-                item
-            ) in scene_graph_data:  # CHANGE THIS BACK TO ALL ITEMS PLS DO NOT FORGET
+            for item in scene_graph_data:
                 self.scene_graph_array.append(item)
                 relationships = item["relationships"]
                 for rel in relationships:
                     try:
-                        rel_name = rel["synsets"][0]
+                        rel_list = rel["synsets"][0]
                     except:
                         continue
-                    if not self.all_relationship_categories["rel_name_to_rel_idx"]:
-                        # Key doesn't exist, so add it with the associated value
-                        self.all_relationship_categories["rel_name_to_rel_idx"].update(
-                            {rel_name: node_idx}
-                        )  # relationship_idx
-                        self.all_relationship_categories["rel_idx_to_rel_name"].update(
-                            {node_idx: rel_name}
-                        )
-                        self.all_node_categories["node_name_to_node_idx"].update(
-                            {rel_name: node_idx}
-                        )
-                        self.all_node_categories["node_idx_to_node_name"].update(
-                            {node_idx: rel_name}
-                        )
-                        node_idx += 1
-                        continue
-                    if (
-                        rel_name
-                        not in self.all_relationship_categories["rel_idx_to_rel_name"]
-                    ):
-                        # Key doesn't exist, so add it with the associated value
-                        self.all_relationship_categories["rel_name_to_rel_idx"].update(
-                            {rel_name: node_idx}
-                        )  # relationship_idx
-                        self.all_relationship_categories["rel_idx_to_rel_name"].update(
-                            {node_idx: rel_name}
-                        )
-                        self.all_node_categories["node_name_to_node_idx"].update(
-                            {rel_name: node_idx}
-                        )
-                        self.all_node_categories["node_idx_to_node_name"].update(
-                            {node_idx: rel_name}
-                        )
-                        node_idx += 1
+                    for rel_name in rel_list:
+                        print("level3")
+                        if not self.all_relationship_categories["rel_name_to_rel_idx"]:
+                            # Key doesn't exist, so add it with the associated value
+                            self.all_relationship_categories[
+                                "rel_name_to_rel_idx"
+                            ].update(
+                                {rel_name: node_idx}
+                            )  # relationship_idx
+                            self.all_relationship_categories[
+                                "rel_idx_to_rel_name"
+                            ].update({node_idx: rel_name})
+                            self.all_node_categories["node_name_to_node_idx"].update(
+                                {rel_name: node_idx}
+                            )
+                            self.all_node_categories["node_idx_to_node_name"].update(
+                                {node_idx: rel_name}
+                            )
+                            node_idx += 1
+                            continue
+                        if (
+                            rel_name
+                            not in self.all_relationship_categories[
+                                "rel_idx_to_rel_name"
+                            ]
+                        ):
+                            # Key doesn't exist, so add it with the associated value
+                            self.all_relationship_categories[
+                                "rel_name_to_rel_idx"
+                            ].update(
+                                {rel_name: node_idx}
+                            )  # relationship_idx
+                            self.all_relationship_categories[
+                                "rel_idx_to_rel_name"
+                            ].update({node_idx: rel_name})
+                            self.all_node_categories["node_name_to_node_idx"].update(
+                                {rel_name: node_idx}
+                            )
+                            self.all_node_categories["node_idx_to_node_name"].update(
+                                {node_idx: rel_name}
+                            )
+                            node_idx += 1
                 objects = item["objects"]
                 for obj in objects:
+                    print("level4")
                     try:
-                        obj_name = obj["synsets"][0]
+                        obj_list = obj["synsets"]
                     except:
                         continue
-                    if not self.all_object_categories["class_name_to_class_idx"]:
-                        # Key doesn't exist, so add it with the associated value
-                        self.all_object_categories["class_name_to_class_idx"].update(
-                            {obj_name: node_idx}
-                        )
-                        self.all_object_categories["class_idx_to_class_name"].update(
-                            {node_idx: obj_name}
-                        )
-                        self.all_node_categories["node_name_to_node_idx"].update(
-                            {obj_name: node_idx}
-                        )
-                        self.all_node_categories["node_idx_to_node_name"].update(
-                            {node_idx: obj_name}
-                        )
-                        node_idx += 1
-                        continue
-                    if (
-                        obj_name
-                        not in self.all_object_categories["class_name_to_class_idx"]
-                    ):
-                        # Key doesn't exist, so add it with the associated value
-                        self.all_object_categories["class_name_to_class_idx"].update(
-                            {obj_name: node_idx}
-                        )
-                        self.all_object_categories["class_idx_to_class_name"].update(
-                            {node_idx: obj_name}
-                        )
-                        self.all_node_categories["node_name_to_node_idx"].update(
-                            {obj_name: node_idx}
-                        )
-                        self.all_node_categories["node_idx_to_node_name"].update(
-                            {node_idx: obj_name}
-                        )
-                        node_idx += 1
+                    for obj_name in obj_list:
+                        print("level5")
+                        if not self.all_object_categories["class_name_to_class_idx"]:
+                            # Key doesn't exist, so add it with the associated value
+                            self.all_object_categories[
+                                "class_name_to_class_idx"
+                            ].update({obj_name: node_idx})
+                            self.all_object_categories[
+                                "class_idx_to_class_name"
+                            ].update({node_idx: obj_name})
+                            self.all_node_categories["node_name_to_node_idx"].update(
+                                {obj_name: node_idx}
+                            )
+                            self.all_node_categories["node_idx_to_node_name"].update(
+                                {node_idx: obj_name}
+                            )
+                            node_idx += 1
+                            continue
+                        if (
+                            obj_name
+                            not in self.all_object_categories["class_name_to_class_idx"]
+                        ):
+                            # Key doesn't exist, so add it with the associated value
+                            self.all_object_categories[
+                                "class_name_to_class_idx"
+                            ].update({obj_name: node_idx})
+                            self.all_object_categories[
+                                "class_idx_to_class_name"
+                            ].update({node_idx: obj_name})
+                            self.all_node_categories["node_name_to_node_idx"].update(
+                                {obj_name: node_idx}
+                            )
+                            self.all_node_categories["node_idx_to_node_name"].update(
+                                {node_idx: obj_name}
+                            )
+                            node_idx += 1
                     try:
                         obj_attributes = obj["attributes"]
                     except:
@@ -263,7 +267,7 @@ class VisualGenomeDataset(Dataset):
     def process(self) -> None:
         Path("scene_graphs").mkdir(parents=True, exist_ok=True)
         # print(self.scene_graph_array)
-        for graph in self.scene_graph_array[0:10]:
+        for graph in self.scene_graph_array[0:2]:
             graph_data_object = self.constructor.construct_scene_graphs(
                 scene_graph=graph,
                 category_dict=self.all_node_categories["node_name_to_node_idx"],
@@ -273,6 +277,7 @@ class VisualGenomeDataset(Dataset):
 
             # Save the file in the directory
             # torch.save(graph_data_object, "scene_graphs/please_god.pt")
+
             torch.save(graph_data_object, "please_god.pt")
             break
 

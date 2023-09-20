@@ -18,6 +18,7 @@ class SceneGraphConstructor:
     """
 
     def construct_scene_graphs(self, scene_graph, category_dict, colour_dict):
+        print("in scene graph constructor")
         # def construct_scene_graphs(self, scene_graph: dict, category_dict: dict, colour_dict: dict) ->  Data:
         """
         construct_scene_graph constructs and returns a PyTorch Geometric Data object.
@@ -118,6 +119,7 @@ class SceneGraphConstructor:
 
         # Construct the data object and return
         vg_scene_graph = Data(x=feature_vectors_tensor, edge_index=edge_list_tensor)
+        print(vg_scene_graph)
         return vg_scene_graph
 
     @staticmethod
