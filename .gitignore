@@ -159,9 +159,9 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-### Custom ignores ###
-data/
-
+*.png
+*.jpg
 .DS_Store
-.vscode
+*.pt
 *.json
+*.zip
