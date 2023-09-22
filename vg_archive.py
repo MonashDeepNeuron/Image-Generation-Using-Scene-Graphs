@@ -117,8 +117,8 @@ class VisualGenomeDataset(Dataset):
 
         # Get image metadata for each image
         if image_data is not None:
-            for item in image_data:  # CHANGE THIS BACK TO ALL ITEMS PLS DO NOT FORGET
-                image_id = item["image_id"]
+            for item in image_data:
+                image_id = item["id"]
                 file_url = item["url"]
                 width = item["width"]
                 height = item["height"]
@@ -135,7 +135,7 @@ class VisualGenomeDataset(Dataset):
                 relationships = item["relationships"]
                 for rel in relationships:
                     try:
-                        rel_list = rel["synsets"]
+                        rel_list = rel["synsets"][0]
                     except:
                         continue
                     for rel_name in rel_list:
@@ -201,7 +201,6 @@ class VisualGenomeDataset(Dataset):
                                 {node_idx: obj_name}
                             )
                             node_idx += 1
-
                             continue
                         if (
                             obj_name
@@ -265,22 +264,19 @@ class VisualGenomeDataset(Dataset):
     def process(self) -> None:
         Path("scene_graphs").mkdir(parents=True, exist_ok=True)
         # print(self.scene_graph_array)
-        for graph in self.scene_graph_array:
-            try:
-                graph_data_object = self.constructor.construct_scene_graphs(
-                    scene_graph=graph,
-                    category_dict=self.all_node_categories["node_name_to_node_idx"],
-                    colour_dict=self.all_colours["colour_name_to_colour_idx"],
-                )
-                # SAVE EACH SCENE GRAPH USING ITS IMAGE ID
+        for graph in self.scene_graph_array[0:2]:
+            graph_data_object = self.constructor.construct_scene_graphs(
+                scene_graph=graph,
+                category_dict=self.all_node_categories["node_name_to_node_idx"],
+                colour_dict=self.all_colours["colour_name_to_colour_idx"],
+            )
+            # SAVE EACH SCENE GRAPH USING ITS IMAGE ID
 
-                # Save the file in the directory
-                # torch.save(graph_data_object, "scene_graphs/please_god.pt")
+            # Save the file in the directory
+            # torch.save(graph_data_object, "scene_graphs/please_god.pt")
 
-                torch.save(graph_data_object, "please_god.pt")
-                break
-            except:
-                continue
+            torch.save(graph_data_object, "please_god.pt")
+            break
 
     def len(self):
         return len(self.scene_graph_array)

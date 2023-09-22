@@ -62,11 +62,12 @@ class GraphOperations:
             as_tuple=True)[0]
         # indices = (data.edge_list[0] == node).nonzero(as_tuple=True)[0]
 
-        # Retrieve the predicate nodes for these edgeindices
+        # Retrieve the predicate nodes for these edge indices
         pred_nodes = data.edge_index[1][pred_indices]
+        print(pred_nodes)
 
         # for each pred node, retrieve its corresponding subject node
-        for predicate_node in pred_nodes.items():
+        for predicate_node in pred_nodes:
             # Find the edge which connects the predicate node to the subject node
             subject_index = (data.edge_index[0] == predicate_node).nonzero(
                 as_tuple=True)[0]
@@ -78,6 +79,5 @@ class GraphOperations:
             connections.append([predicate_node, subject_node])
         return connections
 
-
-    @staticmethod
-    def sort_feature_vector_array(data)
+    # @staticmethod
+    # def sort_feature_vector_array(data)

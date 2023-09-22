@@ -67,8 +67,8 @@ class SceneGraphConstructor:
         construct_scene_graph constructs the PyTorch Geometric Data object from a given list of nodes (objects)
 
         params:
-        - <Tensor of ClassIDs indexed by Vertex IDs> nodes: contains all objects in a given image
-        - <Tensor of bounding boxes indexed by Vertex IDs> boxes
+        - <Tensor of ClassIDs indexed by Vertex IDs> nodes: classIDs of each object in an image indexed by vertex ID
+        - <Tensor of bounding boxes indexed by Vertex IDs> boxes: [x0,x1,y0,y1] bounding box for each object indexed by vertex ID
         - <Tensor of segmentation masks indexed by Vertex IDs> masks
         feature vectors for a given image (list of nodes in the
         form [vertex ID, position vector]).
@@ -114,13 +114,12 @@ class SceneGraphConstructor:
         adjacency_list = edges
 
         # Constructing node feature vectors
-        feature_vectors = [[] * len(nodes)]
+        feature_vectors = []
         for i in range(num_nodes):
             new_feature_vector = self.construct_feature_vector(
-                i, nodes[i], node_centres[i]
-            )
+                i, nodes[i], node_centres[i], True)
             # new_feature_vector = [nodes[i], *node_centres[i]]
-            feature_vectors[i] = new_feature_vector
+            feature_vectors.append(new_feature_vector)
 
         feature_vectors = torch.tensor(feature_vectors)
 
@@ -130,7 +129,8 @@ class SceneGraphConstructor:
         the top right of the image. 
         """
         # Adding the supernode centre to node_centres
-        node_centres = torch.cat((node_centres, torch.tensor([[0.5, 0.5]])), dim=0)
+        node_centres = torch.cat(
+            (node_centres, torch.tensor([[0.5, 0.5]])), dim=0)
 
         # supernode_ID denotes the unique ID for the supernode
         supernode_ID = len(nodes)
@@ -139,9 +139,8 @@ class SceneGraphConstructor:
 
         # Define the feature vector for the supernode
         supernode_feature_vector = self.construct_feature_vector(
-            supernode_ID, in_image_classID, 0.5, 0.5, 0, 0
-        )
-        # [in_image_classID, 0.5, 0.5]
+            supernode_ID, in_image_classID, (0.5, 0.5), False)
+
         feature_vectors = torch.cat(
             (feature_vectors, torch.tensor([supernode_feature_vector])), dim=0
         )
@@ -153,8 +152,8 @@ class SceneGraphConstructor:
         """
         Adding Predicate Nodes: For each edge, make it a node with a nodeID. 
         """
-        # nodeID = supernode_ID+1  # Starting node ID to give to predicate nodes
-        nodeID = len(nodes)
+        nodeID = supernode_ID+1  # Starting node ID to give to predicate nodes
+        # nodeID = len(nodes)+1
 
         def midpoint(p1, p2):
             return ((p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2)
@@ -166,7 +165,8 @@ class SceneGraphConstructor:
             objectID = predicate[1]
 
             # Find the midpoint vector m from node_centres[u] node_centres[v]
-            position = midpoint(node_centres[subjectID], node_centres[objectID])
+            position = midpoint(
+                node_centres[subjectID], node_centres[objectID])
 
             # Determine the class ID by determining the relationship between the subject and object
             classID = self.determine_relationship(
@@ -174,12 +174,12 @@ class SceneGraphConstructor:
             )
 
             # Add predicate node to node feature vectors tensor  nodeID, classID, node_centre
-            new_feature_vector = torch.tensor(
-                self.construct_feature_vector(nodeID, classID, position)
-            )
-            # [[position[0], position[1], self.boxes[] self.Direction[classID].value, ]])
+            new_feature_vector = self.construct_feature_vector(
+                nodeID, classID, position, False)
 
-            feature_vectors = torch.cat([feature_vectors, new_feature_vector], dim=0)
+            feature_vectors = torch.cat(
+                (feature_vectors, torch.tensor([new_feature_vector])), dim=0
+            )
 
             # Add edges from subject --> predicate and predicate --> object
             sub2pred = [subjectID, nodeID]
@@ -196,23 +196,38 @@ class SceneGraphConstructor:
         Each column represents an edge. If edge_index[:, i] = [src, dest],
         then node src is connected to node dest.
         """
+
         adjacency_list_tensor = torch.tensor(temporary).t().contiguous()
-        coco_scene_graph = Data(x=feature_vectors, edge_index=adjacency_list_tensor)
+        print(adjacency_list_tensor)
+        # print(f"feature vectors: {feature_vectors}")
+        coco_scene_graph = Data(
+            x=feature_vectors, edge_index=adjacency_list_tensor)
         return coco_scene_graph
 
-    def construct_feature_vector(self, nodeID, classID, node_centre):
-        # returns a feature vector of the form: [nodeID, category_id, x, y, w, h]
-        # objectID is later trimmed
-        x0, y0, x1, y1 = self.boxes[nodeID]  # subject corners
+    def construct_feature_vector(self, nodeID, classID, node_centre, calculateWidth):
+        '''
+        Returns a feature vector of the form: [nodeID, category_id, x, y, w, h]
+
+        params:
+        - nodeID (int): the node ID (0...len(nodes))
+        - classID (int): the class ID which maps to a class (e.g. car)
+        - node_centre (int): tuple [x,y]
+        - calculateWidth (bool): true for object nodes, which have a bounding box
+        '''
 
         # Calculating the width and height
-        w = abs(y1 - y0)
-        h = abs(x1 - x0)
+        if calculateWidth:
+            x0, y0, x1, y1 = self.boxes[nodeID]  # subject corners
+            h = abs(y1 - y0)
+            w = abs(x1 - x0)
+        else:
+            h = 0
+            w = 0
 
         x = node_centre[0]
         y = node_centre[1]
 
-        return [nodeID, classID, x, y, w, h]
+        return [torch.tensor(nodeID), classID, x, y, w, h]
 
     def determine_relationship(self, s, o, node_centres):
         """
@@ -230,19 +245,19 @@ class SceneGraphConstructor:
 
         # Check for surrounding and inside conditions
         if sx0 < ox0 and sx1 > ox1 and sy0 < oy0 and sy1 > oy1:
-            return "SURROUNDING"
+            return self.Direction.SURROUNDING.value
         if sx0 > ox0 and sx1 < ox1 and sy0 > oy0 and sy1 < oy1:
-            return "INSIDE"
+            return self.Direction.INSIDE.value
 
         # Determine direction based on angle
         if theta >= RIGHT_BOUND or theta <= LEFT_BOUND:
-            return "LEFT"
+            return self.Direction.LEFT.value
         if LEFT_BOUND <= theta < -math.pi / 4:
-            return "ABOVE"
+            return self.Direction.ABOVE.value
         if -math.pi / 4 <= theta < math.pi / 4:
-            return "RIGHT"
+            return self.Direction.RIGHT.value
         if math.pi / 4 <= theta < RIGHT_BOUND:
-            return "BELOW"
+            return self.Direction.BELOW.value
 
     def extract_edges_from_delaunay(self, points):
         """

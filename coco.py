@@ -265,7 +265,7 @@ class CocoPyGDataset(Dataset):
     #     ...
 
     def process(self):
-        index = 0
+        index = 2
         for raw_path in self.raw_paths:
 
             image_id = self.image_ids[index]

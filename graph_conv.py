@@ -16,16 +16,19 @@ class CustomGNN(nn.Module):
         hidden_dim=[512, 64],
         pooling="avg",
         mlp_normalization="none",
-        num_layers=3,
+        num_layers=1,
     ):
+        super(CustomGNN, self).__init__()
         # input_dim should be 3*dim of nodes
 
         if output_dim is None:
             output_dim = input_dim
 
         self.fc1 = nn.Linear(in_features=input_dim, out_features=hidden_dim[0])
-        self.fc2 = nn.Linear(in_features=hidden_dim[0], out_features=hidden_dim[1])
-        self.out = nn.Linear(in_features=hidden_dim[1], out_features=output_dim)
+        self.fc2 = nn.Linear(
+            in_features=hidden_dim[0], out_features=hidden_dim[1])
+        self.out = nn.Linear(
+            in_features=hidden_dim[1], out_features=output_dim)
         self.relu = nn.ReLU(inplace=True)
 
         self.num_layers = num_layers
@@ -52,18 +55,19 @@ class CustomGNN(nn.Module):
 
         # if x is [num_nodes, num_feats]
         dynamic_matrix = (
-            x.copy()
+            x.clone()
         )  # shallow copy the data object, this will store the updated graph
 
         # Extracting the indices of non-predicate nodes
         object_indices = []
         node_id_to_node_idx = {}
-        for i, node in enumerate(dynamic_matrix):  # "i" would describe the current node
+        # "i" would describe the current node
+        for i, node in enumerate(dynamic_matrix):
             if node[1] != range(183, 189):
                 object_indices.append(i)
             node_id_to_node_idx.update({node[0]: i})
 
-        for layer in self.num_layers:  # for each layer in our GNN
+        for i in range(self.num_layers):  # for each layer in our GNN
             for (
                 i
             ) in (
@@ -82,6 +86,8 @@ class CustomGNN(nn.Module):
                 )
 
                 for connection in outgoing_connections:
+                    print(node_id_to_node_idx)
+                    print(connection[0])
                     predicate = dynamic_matrix.x[node_id_to_node_idx[connection[0]], :]
                     subject = dynamic_matrix.x[node_id_to_node_idx[connection[1]], :]
                     vector = torch.cat((node, predicate, subject), dim=1)
@@ -106,3 +112,10 @@ class CustomGNN(nn.Module):
         out = self.out(x)
 
         return out
+
+
+if __name__ == "__main__":
+    gnn = CustomGNN(input_dim=6, output_dim=6)
+    data = torch.load("please_god.pt")
+    output = gnn(data)
+    print(output)
