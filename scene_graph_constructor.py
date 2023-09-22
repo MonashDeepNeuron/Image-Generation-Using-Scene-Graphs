@@ -155,13 +155,12 @@ class SceneGraphConstructor:
 
         # Assuming the first name in the 'synsets' list is the main category for the node
         category_name = object_dict["synsets"][0]
-        print(all_node_categories)
-        category_id = list(all_node_categories.values()).index(category_name)
+        category_id = list(all_node_categories).index(category_name)
 
         # Assuming the first colour is the colour of the object
         colour_name = object_dict["attributes"][0]
         if colour_name in all_colour_categories:
-            colour_id = list(all_colour_categories.values()).index(colour_name)
+            colour_id = list(all_colour_categories).index(colour_name)
 
         # If the attribute is not whitelisted and exists as a key in all_colour_categories, assign 0
         else:
@@ -205,7 +204,7 @@ class SceneGraphConstructor:
 
         # Assuming the first synset in the 'synsets' list is the primary category for the predicate
         category_name = predicate_dict["synsets"][0]
-        category_id = list(all_node_categories.values()).index(category_name)
+        category_id = list(all_node_categories).index(category_name)
 
         # The colour_ID of a predicate node is always 0
         colour_id = 0

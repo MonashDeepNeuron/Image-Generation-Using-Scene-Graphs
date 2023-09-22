@@ -117,7 +117,7 @@ class VisualGenomeDataset(Dataset):
 
         # Get image metadata for each image
         if image_data is not None:
-            for item in image_data:  # CHANGE THIS BACK TO ALL ITEMS PLS DO NOT FORGET
+            for item in image_data:
                 image_id = item["id"]
                 file_url = item["url"]
                 width = item["width"]
@@ -139,7 +139,6 @@ class VisualGenomeDataset(Dataset):
                     except:
                         continue
                     for rel_name in rel_list:
-                        print("level3")
                         if not self.all_relationship_categories["rel_name_to_rel_idx"]:
                             # Key doesn't exist, so add it with the associated value
                             self.all_relationship_categories[
@@ -182,13 +181,11 @@ class VisualGenomeDataset(Dataset):
                             node_idx += 1
                 objects = item["objects"]
                 for obj in objects:
-                    print("level4")
                     try:
                         obj_list = obj["synsets"]
                     except:
                         continue
                     for obj_name in obj_list:
-                        print("level5")
                         if not self.all_object_categories["class_name_to_class_idx"]:
                             # Key doesn't exist, so add it with the associated value
                             self.all_object_categories[

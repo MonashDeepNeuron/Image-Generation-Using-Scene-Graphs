@@ -11,13 +11,13 @@ import torch_geometric
 import networkx as nx
 import matplotlib.pyplot as plt  # Note the change here
 
-g = torch.load('please_god.pt')
-labeldict = {} # what we want our feature vector to actually look like
-i = 0 #  i = the node ID
+g = torch.load("please_god.pt")
+labeldict = {}  # what we want our feature vector to actually look like
+i = 0  #  i = the node ID
 for node in g.x:
-    labeldict[i] = node[0]
+    labeldict[i] = node[1]
     i += 1
-    
+
 g = torch_geometric.utils.to_networkx(g, to_undirected=False)
 
 # Check if the graph has nodes and edges
@@ -34,6 +34,6 @@ if not g.edges():
 # Use a different layout
 pos = nx.spring_layout(g)
 
-plt.figure(figsize=(12,12))  # Increase the figure size for better visibility
+plt.figure(figsize=(12, 12))  # Increase the figure size for better visibility
 nx.draw(g, pos, labels=labeldict, node_size=50, edge_color="gray", with_labels=True)
 plt.show()
