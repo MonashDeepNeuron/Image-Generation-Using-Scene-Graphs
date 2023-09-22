@@ -64,7 +64,6 @@ class GraphOperations:
 
         # Retrieve the predicate nodes for these edge indices
         pred_nodes = data.edge_index[1][pred_indices]
-        print(pred_nodes)
 
         # for each pred node, retrieve its corresponding subject node
         for predicate_node in pred_nodes:
