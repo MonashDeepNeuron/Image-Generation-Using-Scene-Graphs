@@ -1,4 +1,13 @@
 
+# preliminary step: git pull (make sure your branch is up to date before u push)
+
+# step 1: git status to check for unstaged files (in red)
+# step 2: git add <NAME OF FILE> to stage files (can do this step multiple times to add multiple files)
+# step 3: git commit -m "YOUR MESSAGE" to commit your staged files
+# step 4: git push -u origin <NAME OF YOUR CURRENT BRANCH> to push your changes 
+
+# Note: you can do a git status any time to check your git branch's status
+
 
 import torch
 
