@@ -6,12 +6,18 @@
 # g = torch_geometric.utils.to_networkx(g, to_undirected=False)
 # nx.draw_networkx(g)
 # plt.show()
+import matplotlib.pyplot as plt
 import torch
 import torch_geometric
 import networkx as nx
-import matplotlib.pyplot as plt  # Note the change here
 
-g = torch.load("please_god.pt")
+# import matplotlib.pyplot as plt  # Note the change here
+
+import matplotlib
+
+matplotlib.use("Agg")  # or another appropriate backend
+
+g = torch.load("data/scene_graphs/1.pt")
 labeldict = {}  # what we want our feature vector to actually look like
 i = 0  # i = the node ID
 for node in g.x:
@@ -29,14 +35,19 @@ if not g.edges():
     print("The graph has no edges!")
 
 # # Draw the graph
-# #plt.ioff()  # Turn off interactive mode
+# plt.ioff()  # Turn off interactive mode
 # nx.draw_networkx(g)
 # plt.show()  # This will show the plot
 
 # Use a different layout
 pos = nx.spring_layout(g)
 
-plt.figure(figsize=(12, 12))  # Increase the figure size for better visibility
-nx.draw(g, pos, labels=labeldict, node_size=50,
-        edge_color="gray", with_labels=True)
+# plt.figure(figsize=(12, 12))  # Increase the figure size for better visibility
+# nx.draw(g, pos, labels=labeldict, node_size=50, edge_color="gray", with_labels=True)
+fig, ax = plt.subplots(figsize=(12, 12))
+nx.draw(
+    g, pos, labels=labeldict, node_size=50, edge_color="gray", with_labels=True, ax=ax
+)
+plt.savefig("output_graph.png")
+
 plt.show()

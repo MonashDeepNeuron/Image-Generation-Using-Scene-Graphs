@@ -19,8 +19,9 @@ from torch_geometric.data import Dataset, download_url
 import networkx as nx
 from networkx.algorithms import tree
 
-import mst_algo
-import delaunay
+import sys
+sys.path.insert(1, 'src/utility')
+import delaunay as delaunay
 
 
 class Resize(object):
@@ -325,7 +326,7 @@ class CocoPyGDataset(Dataset):
             g = torch_geometric.utils.to_networkx(
                 scene_graph, to_undirected=False)
             nx.draw(g)
-            torch.save(scene_graph, "please_god.pt")
+            torch.save(scene_graph, "data_1.pt")
 
     def get_adjacency_info(self, objs, boxes, masks):
         # Directed edges, subject -> predicate -> object
@@ -373,10 +374,10 @@ class CocoPyGDataset(Dataset):
 
 
 if __name__ == "__main__":
-    image_dir = "/Users/nyankyaw/Documents/UNI/YEAR4/MDN/Image-Generation-Using-Scene-Graphs/data/COCO_Stuff/validation/val2017"
-    instances_json = "/Users/nyankyaw/Documents/UNI/YEAR4/MDN/Image-Generation-Using-Scene-Graphs/data/COCO_Stuff/thing_annotations_coco/annotations/instances_val2017.json"
-    stuff_json = "/Users/nyankyaw/Documents/UNI/YEAR4/MDN/Image-Generation-Using-Scene-Graphs/data/COCO_Stuff/stuff_annotations_coco/stuff_val2017.json"
-    l = {i: i + 1 for i in range(9)}
+    image_dir = "data/COCO_Stuff/validation/val2017"
+    instances_json = "data/COCO_Stuff/thing_annotations_coco/annotations/instances_val2017.json"
+    stuff_json = "data/COCO_Stuff/stuff_annotations_coco/stuff_val2017.json"
+    # l = {i: i + 1 for i in range(9)}
 
     dset = CocoPyGDataset(image_dir, instances_json, stuff_json=stuff_json,
                           stuff_only=True, image_size=(64, 64), mask_size=16,

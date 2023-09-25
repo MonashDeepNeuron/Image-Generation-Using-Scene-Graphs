@@ -1,12 +1,13 @@
 import torch
 import torch.nn as nn
 import numpy as np
-import grep_youtill as g
+import utility.grep_youtill as g
+import model.boundingbox as bbox
 
 
 class CustomGNN(nn.Module):
     """
-    A single layer of scene graph convolution.
+    Our custom graph neural network (Documentation in construction)
     """
 
     def __init__(
@@ -139,4 +140,13 @@ if __name__ == "__main__":
     gnn = CustomGNN(input_dim=6, output_dim=6)
     data = torch.load("please_god.pt")
     output = gnn(data)
-    # print(output)
+
+    image_layout = []
+    bbox_model = bbox.boundingboxPredict(dim=[6, 128, 6])
+    for object_tensor in output:
+        # could move the above into this, i.e we expect list of tensors as x
+        pred_obj_bbox = bbox_model(object_tensor)
+        image_layout.append(pred_obj_bbox)
+
+    print(output)
+    print(image_layout)
