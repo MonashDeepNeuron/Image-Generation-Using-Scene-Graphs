@@ -1,0 +1,91 @@
+
+"""
+Steps to make Training Loop and Loss functions:
+
+# Loss functions:
+# 1. Box Loss: L1 distance between x1, x2, y1, y2, and x1
+# 2. Pixel Loss (dont need to do rn)
+#3. Mask Loss (maybe)
+
+
+# Box Loss: L(box) = sum from i = 1 to n of || b(i) - b(i) ||
+
+"""
+
+
+# Bring in dependencies:
+import coco.py
+import os
+import random
+import math
+import json
+
+from collections import defaultdict
+
+import torch                    # The main PyTorch library for tensors and other basic operations.
+import torch.nn as nn           # A sub-library containing Softmax, Module, loss functions, etc.
+import torch.optim as optim     # A sub-library containing various optimization algorithms like SGD.
+from torch.utils.data import Dataset, DataLoader
+import torchvision.transforms as T
+
+import numpy as np
+import h5py
+import PIL
+
+
+
+"""
+NOOB EXPLANATION (for noobs like me): Loss functions measure how close a predicted value is to the actual value. When our model makes
+predictions that are very close to the actual values on our training and testing dataset, it means we have a pretty robust model.
+
+Loss functions guide the model training process towards correct predictions. 
+The loss function is a mathematical function or expression used to measure a dataset's performance on a model.
+
+Pytorch has two fundamental libraries, torch, and torch nn, that encompass the starter functions required to construct your loss functions like creating a tensor.
+torch library provides excellent flexibility and support for tensor operations on the GPU. It has a wide range of functionalities to train different neural network models.
+The torch nn module provides building blocks like data loaders, train, loss functions, and more essential to training a model.
+
+Using L1Loss in torch.nn, try and make something like in the github code below:
+
+Looking at https://github.com/google/sg2im/blob/master/scripts/train.py after line 500 (at main function)
+
+"""
+
+# Bring in Graphs first, then go into nodes
+        # VG_dataset  = VGDataset(args...)
+        # VG_dataloader = Dataloader(VG_dataset)
+        # model = model(args) model = assuming we have GNN and box regression
+        # def training:
+            # bboxes = model(x) Assume the model is made such that it makes the bboxes, x = batch
+            # bboxes are in a format as a list [[x1, x2, y1, y2] identifier:object1]]......
+            # grount truth:
+                # DATA: node_feats [[x1,y1, w,h, obj_id]]      # Working with outputs that we do not have, so make a general training loop
+
+# TO get the ground truth bounding boxes, we need to use the dataloader to get the ground truth bounding boxes from the dataset. We do this by using the dataloader 
+# to get a batch, get the url of the image, then use the url to find the image in the dictionary (created by Nyan and Chloe), and then 
+
+# 
+
+# Need the ground truth boxes and predicted boxes
+
+
+
+# Then run Box loss (aka ) function between both predicted bounding boxes and ground truth bounding boxes so to minimise loss (penalise the model)
+box_loss = nn.L1loss(predicted_boxes, ground_truth_boxes)
+optimizer = optim.SGD(params = [predicted_boxes, lr = 0.01])
+optimizer.zero_grad()
+box_loss.backward()
+optimizer.step()
+
+
+
+if __name__ == '__main__':
+    image_dir = none # Make it the pathway to the image directory
+    instances_json = none # path of the json file that holds the instances.json file
+    stuff_json = # path to the stiff_json file
+    # stuff_only will only iterate over the stuff_json
+    coco_dataset = CocoPyGDataset(image_dir, instances_json, stuff_json, stuff_only = True, image_size = {128, 128}, mask_size = 16, normalize_images = True, max_samples = None,  include_relationships = True, min_object_size = 0.02
+                                  min_objects_per_image = 3, max_objects_per_image = 8, include_other = False, instance_whitelist = None, stuff_whitelist = None, transform = None, pre_transform = None, pre_filer = None)
+    
+    coco_dataloader = DataLoader(coco_dataset)
+
